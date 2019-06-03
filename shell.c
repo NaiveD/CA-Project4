@@ -1,24 +1,28 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <string.h>
 #include "parse.c"
 
 /* Print the prompt */
-void printPrompt(void);
-char* readCommandLine(int argc, char **argv);
+void printPrompt(char* prompt);
 
 int
 main (int argc, char **argv)
 {
     while (1){
         int childPid;
+        char* prompt;
         char* cmdLine;
 
-        printPrompt();
+        prompt = (char*) malloc(100 * sizeof(char));
+        printPrompt(prompt);
 
         cmdLine = readCommandLine(); //or GNU readline("");
 
         cmd = parseCommand(cmdLine);
+
+        free(prompt);
 
         record command in history list (GNU readline history ?)
 
@@ -39,17 +43,17 @@ main (int argc, char **argv)
             }
         }
     }
+
 }
 
 
 /* Print the prompt */
-void printPrompt(void)
+void printPrompt(char* prompt)
 {
     char hostname[100]; /* host name */
     char cwd[100]; /* current working directory */
-    char cwd2[100]; /* current working directory */
     struct passwd *my_info; /* used for getpwuid */
-    char* prompt; /* $ or # */
+    char* root; /* $ or # */
 
     /* get host name */
     gethostname(hostname, sizeof(hostname));
@@ -62,15 +66,15 @@ void printPrompt(void)
 
     /* get the prompt */
     if (geteuid() == 0) /* if rooted */
-        prompt = "#";
+        root = "#";
     else /* if not rooted */
-        prompt = "$";
+        root = "$";
 
     /* login name: my_info->pw_name */
     /* home (~): my_info->pw_dir */
     /* abbreviate as ~ */
     if (strncmp(cwd, my_info->pw_dir, strlen(my_info->pw_dir)) == 0) /* If the cwd contains home (~), abbreviate it as ~ */
-        printf("%s@%s:~%s%s ", my_info->pw_name, hostname, cwd+strlen(my_info->pw_dir), prompt);
+        sprintf(prompt, "%s@%s:~%s%s ", my_info->pw_name, hostname, cwd+strlen(my_info->pw_dir), root);
     else
-        printf("%s@%s:%s%s ", my_info->pw_name, hostname, cwd, prompt);
+        printf(prompt, "%s@%s:%s%s ", my_info->pw_name, hostname, cwd, root);
 }
