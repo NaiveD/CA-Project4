@@ -123,6 +123,12 @@ int main (int argc, char **argv)
 
         cmdLine = rl_gets(prompt); /* print the prompt and get the command, cmd is malloced automatically */
 
+        /* If meet EOF */
+        if (cmdLine == NULL) {
+            printf("\n");
+            break;
+        }
+        
         /* If there is nothing input, continue to next loop */
         if (strlen(cmdLine) == 0)
             continue;
