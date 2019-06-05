@@ -78,16 +78,21 @@ void executeBuiltInCommand(cmd* command)
 {
     if (strcmp(command->cmd_name, "cd")==0) {
         struct passwd *my_info; /* used for getpwuid() */
-
+        char dir[100];
         /* get the struct */
         my_info = getpwuid(geteuid());
 
         if (command->num_args == 0)
             chdir(my_info->pw_dir);
 
-        else if (command->num_args == 1)
-            chdir(command->args[0]);
-
+        else if (command->num_args == 1) {
+            if (command->args[0][0] == '~') {
+                sprintf(dir, "%s%s", my_info->pw_dir, command->args[0]+1);
+                chdir(dir);
+            }
+            else
+                chdir(command->args[0]);
+        }
     }
     else if (strcmp(command->cmd_name, "jobs")==0) {
 
@@ -119,7 +124,7 @@ int main (int argc, char **argv)
         cmdLine = rl_gets(prompt); /* print the prompt and get the command, cmd is malloced automatically */
 
         /* If there is nothing input, continue to next loop */
-        if (cmdLine == NULL)
+        if (strlen(cmdLine) == 0)
             continue;
 
         command = parseCommand(cmdLine); /* parse the command line */
