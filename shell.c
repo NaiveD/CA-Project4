@@ -2,11 +2,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <readline/readline.h>
+/* #include <readline/readline.h>  I give up using readline */
 #include <pwd.h>
 #include "parse.c"
-
-static char *cmdLine = (char*) NULL; /* the input command line */
 
 /* Get the prompt */
 void printPrompt(char* prompt)
@@ -35,30 +33,30 @@ void printPrompt(char* prompt)
     /* home (~): my_info->pw_dir */
     /* abbreviate as ~ */
     if (strncmp(cwd, my_info->pw_dir, strlen(my_info->pw_dir)) == 0) /* If the cwd contains home (~), abbreviate it as ~ */
-        sprintf(prompt, "%s@%s:~%s%s ", my_info->pw_name, hostname, cwd+strlen(my_info->pw_dir), root);
+        printf("%s@%s:~%s%s ", my_info->pw_name, hostname, cwd+strlen(my_info->pw_dir), root);
     else
-        sprintf(prompt, "%s@%s:%s%s ", my_info->pw_name, hostname, cwd, root);
+        printf("%s@%s:%s%s ", my_info->pw_name, hostname, cwd, root);
 }
 
 /* Read a string, and return a pointer to it.  Returns NULL on EOF.
  * So many problems with "readline()", maybe change for "gets()" later
  *
  * */
-char* rl_gets (char* prompt)
+/* char* rl_gets (char* prompt)
 {
-    /* If cmdLine has already been allocated, return the memory
-       to the free pool. */
+    If cmdLine has already been allocated, return the memory
+       to the free pool.
     if (cmdLine)
     {
         free (cmdLine);
         cmdLine = (char*) NULL;
     }
 
-    /* Get a line from the user. */
+    Get a line from the user.
     cmdLine = readline(prompt);
 
     return cmdLine;
-}
+} */
 
 /* Input a command,
  * return 1 if it's a built-in command
@@ -116,19 +114,22 @@ int main (int argc, char **argv)
     while (1) {
         /* int childPid;  Used later when executing command */
         char prompt[100]; /* the prompt */
-        char* cmdLine; /* the command line */
+        char cmdLine[100]; /* the command line */
         cmd* command; /* the command (struct) */
 
         printPrompt(prompt); /* get the prompt */
 
-        cmdLine = rl_gets(prompt); /* print the prompt and get the command, cmd is malloced automatically */
+        /* Use gets() */
+        gets(cmdLine);
+
+        /* cmdLine = rl_gets(prompt);  print the prompt and get the command, cmd is malloced automatically */
 
         /* If meet EOF */
         if (cmdLine == NULL) {
             printf("\n");
             break;
         }
-        
+
         /* If there is nothing input, continue to next loop */
         if (strlen(cmdLine) == 0)
             continue;
