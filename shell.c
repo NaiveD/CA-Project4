@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pwd.h>
-/* #include <readline/readline.h>  I give up using readline */
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <assert.h>
 #include "parse.c"
 
 /* Get the prompt */
@@ -39,26 +39,6 @@ void printPrompt(char* prompt)
     else
         printf("%s@%s:%s%s ", my_info->pw_name, hostname, cwd, root);
 }
-
-/* Read a string, and return a pointer to it.  Returns NULL on EOF.
- * So many problems with "readline()", maybe change for "gets()" later
- *
- * */
-/* char* rl_gets (char* prompt)
-{
-    If cmdLine has already been allocated, return the memory
-       to the free pool.
-    if (cmdLine)
-    {
-        free (cmdLine);
-        cmdLine = (char*) NULL;
-    }
-
-    Get a line from the user.
-    cmdLine = readline(prompt);
-
-    return cmdLine;
-} */
 
 /* Input a command,
  * return 1 if it's a built-in command
@@ -118,28 +98,26 @@ int isBackgroundJob(cmd* command){
     return backgnd;
 }
 
-int main (int argv, char *argc[])
+int main (int argc, char *argv[])
 {
+    assert(argc == 2);
     FILE* infile;
-     infile = fopen(argc[1],'r');
+    infile = fopen(argv[1], "r");
     while (1) {
         /* int childPid;  Used later when executing command */
         char prompt[100]; /* the prompt */
         char cmdLine[1024+1]; /* the command line */
         cmd* command; /* the command (struct) */
         
-        //printPrompt(prompt); /* get the prompt */
-
-        /* cmdLine = rl_gets(prompt);  print the prompt and get the command, cmd is malloced automatically */
-
-        /* If meet EOF */
-       
-        if (fgets(cmdLine,1024,infile) == NULL) {
-            //printf("\n");
+        /* printPrompt(prompt); get the prompt */
+      
+        if (fgets(cmdLine, 1024, infile) == NULL) {
             break;
         }
+
+        if (cmdLine[strlen(cmdLine)-1] == '\n')
+            cmdLine[strlen(cmdLine)-1] = '\0';
         
-        cmdLine[strlen(cmdLine)-1] = '\0';
         /* If there is nothing input, continue to next loop */
         if (strlen(cmdLine) == 0)
             continue;
