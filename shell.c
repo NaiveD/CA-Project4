@@ -118,23 +118,27 @@ int isBackgroundJob(cmd* command){
     return backgnd;
 }
 
-int main (int argc, char **argv)
+int main (int argv, char *argc[])
 {
+    FILE* infile;
+     infile = fopen(argc[1],'r');
     while (1) {
         /* int childPid;  Used later when executing command */
         char prompt[100]; /* the prompt */
         char cmdLine[1024+1]; /* the command line */
         cmd* command; /* the command (struct) */
-
+        
         //printPrompt(prompt); /* get the prompt */
 
         /* cmdLine = rl_gets(prompt);  print the prompt and get the command, cmd is malloced automatically */
 
         /* If meet EOF */
-        if (fgets(cmdLine,1024,stdin) == NULL) {
+       
+        if (fgets(cmdLine,1024,infile) == NULL) {
             //printf("\n");
             break;
         }
+        
         cmdLine[strlen(cmdLine)-1] = '\0';
         /* If there is nothing input, continue to next loop */
         if (strlen(cmdLine) == 0)
@@ -164,4 +168,5 @@ int main (int argc, char **argv)
         /* Free the memory of command */
         free(command);
     }
+    fclose(infile);
 }
