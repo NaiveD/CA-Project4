@@ -2,8 +2,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-/* #include <readline/readline.h>  I give up using readline */
 #include <pwd.h>
+/* #include <readline/readline.h>  I give up using readline */
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "parse.c"
 
 /* Get the prompt */
@@ -84,12 +86,12 @@ void executeBuiltInCommand(cmd* command)
             chdir(my_info->pw_dir);
 
         else if (command->num_args == 1) {
-            if (command->args[0][0] == '~') {
-                sprintf(dir, "%s%s", my_info->pw_dir, command->args[0]+1);
+            if (command->args[1][0] == '~') {
+                sprintf(dir, "%s%s", my_info->pw_dir, command->args[1]+1);
                 chdir(dir);
             }
             else
-                chdir(command->args[0]);
+                chdir(command->args[1]);
         }
     }
     else if (strcmp(command->cmd_name, "jobs")==0) {
@@ -104,9 +106,15 @@ void executeBuiltInCommand(cmd* command)
 }
 
 /* calls execvp */
-void executeCommand(cmd* command)
-{
-
+void executeCommand(cmd* command){
+    pid_t pid = fork();
+    if (pid == 0){
+        execvp(command->cmd_name,command->args);
+    }else
+    //{
+    //    printf("%d",childPid);
+    //}
+    return 0;
 }
 
 int main (int argc, char **argv)
@@ -138,19 +146,24 @@ int main (int argc, char **argv)
 
         if (isBuiltInCommand(command)) {
             executeBuiltInCommand(command);
-        } /* else {
+        } else {
+            //printf("test");
+            int childPid = 0;
             childPid = fork();
             if (childPid == 0){
+                printf("test");
                 executeCommand(command);
             } else {
-                if (isBackgroundJob(command)){
+                printf("%d",childPid);
+                wait(NULL);
+                //wait(NULL);
+                /*if (isBackgroundJob(command)){
                      record in list of background jobs
                 } else {
-                    waitpid (childPid);
-                }
+                    waitpid (childPisd);*/
+                //}
             }
-        } */
-
+        } 
         /* Free the memory of command */
         free(command);
     }

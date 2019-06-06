@@ -14,12 +14,13 @@ cmd* parseCommand(char* cmdLine)
 
     p = strtok(cmdLine, " "); /* get the first token of cmdLine, i.e. the command name */
     command->cmd_name = p; /* set the command name */
-
+    command->args[command->num_args] = p;
     /* continue parsing. get the arguments */
     p = strtok(NULL, " "); /* the first argument */
     while (p != NULL) {
-        command->args[command->num_args] = p;
         command->num_args++;
+        command->args[command->num_args] = p;
+        
         p = strtok(NULL, " ");
     }
 
