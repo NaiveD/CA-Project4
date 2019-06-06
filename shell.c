@@ -3,11 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pwd.h>
+/* #include <readline/readline.h>  I give up using readline */
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "parse.c"
 
-/* Print the prompt */
+/* Get the prompt */
 void printPrompt(char* prompt)
 {
     char hostname[100]; /* host name */
@@ -38,6 +39,26 @@ void printPrompt(char* prompt)
     else
         printf("%s@%s:%s%s ", my_info->pw_name, hostname, cwd, root);
 }
+
+/* Read a string, and return a pointer to it.  Returns NULL on EOF.
+ * So many problems with "readline()", maybe change for "gets()" later
+ *
+ * */
+/* char* rl_gets (char* prompt)
+{
+    If cmdLine has already been allocated, return the memory
+       to the free pool.
+    if (cmdLine)
+    {
+        free (cmdLine);
+        cmdLine = (char*) NULL;
+    }
+
+    Get a line from the user.
+    cmdLine = readline(prompt);
+
+    return cmdLine;
+} */
 
 /* Input a command,
  * return 1 if it's a built-in command
@@ -74,10 +95,10 @@ void executeBuiltInCommand(cmd* command)
         }
     }
     else if (strcmp(command->cmd_name, "jobs")==0) {
-
+        
     }
     else if (strcmp(command->cmd_name, "exit")==0) {
-
+        exit(0);
     }
     else if (strcmp(command->cmd_name, "kill")==0) {
 
@@ -86,14 +107,15 @@ void executeBuiltInCommand(cmd* command)
 
 /* calls execvp */
 void executeCommand(cmd* command){
-    pid_t pid = fork();
-    if (pid == 0){
-        execvp(command->cmd_name,command->args);
-    }else
-    //{
-    //    printf("%d",childPid);
-    //}
+    execvp(command->cmd_name,command->args);
     return 0;
+}
+
+int isBackgroundJob(cmd* command){
+    int backgnd = 0;
+    if (strcmp(command->args[command->num_args],"&")==0)
+        backgnd =  1;
+    return backgnd;
 }
 
 int main (int argc, char **argv)
@@ -101,25 +123,22 @@ int main (int argc, char **argv)
     while (1) {
         /* int childPid;  Used later when executing command */
         char prompt[100]; /* the prompt */
-        char cmdLine[100]; /* the command line */
-        char* cmdlineptr = NULL;
+        char cmdLine[1024+1]; /* the command line */
         cmd* command; /* the command (struct) */
 
-        printPrompt(prompt); /* get the prompt */
+        //printPrompt(prompt); /* get the prompt */
+
+        /* cmdLine = rl_gets(prompt);  print the prompt and get the command, cmd is malloced automatically */
 
         /* If meet EOF */
-        if (gets(cmdLine) == NULL) {
-            printf("\n");
+        if (fgets(cmdLine,1024,stdin) == NULL) {
+            //printf("\n");
             break;
         }
-
+        cmdLine[strlen(cmdLine)-1] = '\0';
         /* If there is nothing input, continue to next loop */
-        if (strlen(cmdLine) == 0) {
-            printf("%s\n", cmdLine);
+        if (strlen(cmdLine) == 0)
             continue;
-        }
-
-        printf("%s\n", cmdLine);
 
         command = parseCommand(cmdLine); /* parse the command line */
 
@@ -130,17 +149,16 @@ int main (int argc, char **argv)
             int childPid = 0;
             childPid = fork();
             if (childPid == 0){
-                // printf("test");
+                //printf("test");
                 executeCommand(command);
             } else {
-                // printf("%d",childPid);
-                wait(NULL);
-                //wait(NULL);
-                /*if (isBackgroundJob(command)){
-                     record in list of background jobs
+                if (isBackgroundJob(command)){
+                    //record in list of background jobs
+                    printf("success");
                 } else {
-                    waitpid (childPisd);*/
-                //}
+                int stat = 0;
+                waitpid (childPid,&stat,0);
+                }
             }
         } 
         /* Free the memory of command */

@@ -1,7 +1,7 @@
 #ifndef PROJ4_PARSE_H
 #define PROJ4_PARSE_H
 
-#define MAX_ARGS 100
+#define MAX_ARGS 1024
 
 /* define a type "cmd" for every command */
 typedef struct cmd
@@ -12,6 +12,8 @@ typedef struct cmd
     /* argument array and argument number */
     char* args[MAX_ARGS];
     int num_args;
+    //int infd;//输入重定向文件
+    //int outfd;//输出重定向文件
 
 } cmd;
 
