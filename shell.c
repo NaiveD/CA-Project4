@@ -3,12 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pwd.h>
-/* #include <readline/readline.h>  I give up using readline */
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "parse.c"
 
-/* Get the prompt */
+/* Print the prompt */
 void printPrompt(char* prompt)
 {
     char hostname[100]; /* host name */
@@ -39,26 +38,6 @@ void printPrompt(char* prompt)
     else
         printf("%s@%s:%s%s ", my_info->pw_name, hostname, cwd, root);
 }
-
-/* Read a string, and return a pointer to it.  Returns NULL on EOF.
- * So many problems with "readline()", maybe change for "gets()" later
- *
- * */
-/* char* rl_gets (char* prompt)
-{
-    If cmdLine has already been allocated, return the memory
-       to the free pool.
-    if (cmdLine)
-    {
-        free (cmdLine);
-        cmdLine = (char*) NULL;
-    }
-
-    Get a line from the user.
-    cmdLine = readline(prompt);
-
-    return cmdLine;
-} */
 
 /* Input a command,
  * return 1 if it's a built-in command
@@ -123,17 +102,13 @@ int main (int argc, char **argv)
         /* int childPid;  Used later when executing command */
         char prompt[100]; /* the prompt */
         char cmdLine[100]; /* the command line */
+        char* cmdlineptr = NULL;
         cmd* command; /* the command (struct) */
 
         printPrompt(prompt); /* get the prompt */
 
-        /* Use gets() */
-        gets(cmdLine);
-
-        /* cmdLine = rl_gets(prompt);  print the prompt and get the command, cmd is malloced automatically */
-
         /* If meet EOF */
-        if (cmdLine == NULL) {
+        if (gets(cmdLine) == NULL) {
             printf("\n");
             break;
         }
@@ -151,10 +126,10 @@ int main (int argc, char **argv)
             int childPid = 0;
             childPid = fork();
             if (childPid == 0){
-                printf("test");
+                // printf("test");
                 executeCommand(command);
             } else {
-                printf("%d",childPid);
+                // printf("%d",childPid);
                 wait(NULL);
                 //wait(NULL);
                 /*if (isBackgroundJob(command)){
