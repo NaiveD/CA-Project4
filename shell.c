@@ -114,8 +114,12 @@ int main (int argc, char **argv)
         }
 
         /* If there is nothing input, continue to next loop */
-        if (strlen(cmdLine) == 0)
+        if (strlen(cmdLine) == 0) {
+            printf("%s\n", cmdLine);
             continue;
+        }
+
+        printf("%s\n", cmdLine);
 
         command = parseCommand(cmdLine); /* parse the command line */
 
