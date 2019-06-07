@@ -2,6 +2,8 @@
 #define PROJ4_PARSE_H
 
 #define MAX_ARGS 1024
+//the amount of command
+#define PIPELINE 10
 
 /* define a type "cmd" for every command */
 typedef struct cmd
@@ -12,9 +14,10 @@ typedef struct cmd
     /* argument array and argument number */
     char* args[MAX_ARGS];
     int num_args;
-    //int infd;//输入重定向文件
-    //int outfd;//输出重定向文件
 
+    // Redirection
+    int infd;  //Redirection in file descriptor
+    int outfd; //Redirection out file descriptor
 } cmd;
 
 /* the parser function
@@ -22,6 +25,14 @@ typedef struct cmd
  * output a pointer to the struct "cmd" which contains the command name and arguments
  *
  * */
-cmd* parseCommand(char* cmdLine);
+void parseCommand(char* cmdLine);
+
+// Global variables
+extern cmd* command_arr[PIPELINE]; // the command array
+extern char infile[1024+1]; // the redirection in file name
+extern char outfile[1024+1]; // the redirection out file name
+extern int append; // if redirection out is >>
+extern int backgnd; // if background command, 1 for background, 0 for non-background
+
 
 #endif

@@ -4,11 +4,20 @@
 #include <string.h>
 #include <pwd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 #include <assert.h>
 #include "parse.c"
 
-/* Get the prompt */
+// Global variables
+cmd* command_arr[PIPELINE]; // the command array
+char infile[1024+1]; /* the redirection in file name*/
+char outfile[1024+1]; /* the redirection out file name */
+int append = 0; // if redirection out is >>
+int backgnd = 0; /* if background command, 1 for background, 0 for non-background */
+
+/* Get the prompt, but do not print */
 void printPrompt(char* prompt)
 {
     char hostname[100]; /* host name */
@@ -87,31 +96,32 @@ void executeBuiltInCommand(cmd* command)
 
 /* calls execvp */
 void executeCommand(cmd* command){
+    //int i;
+    //for (int i = 0; i < cmd_count; i++)
+    //{
+        /* code */
+    //}
+    
     execvp(command->cmd_name,command->args);
-    return 0;
 }
 
 int isBackgroundJob(cmd* command){
-    int backgnd = 0;
-    if (strcmp(command->args[command->num_args],"&")==0)
-        backgnd =  1;
     return backgnd;
 }
 
 int main (int argc, char *argv[])
 {
     assert(argc == 2);
-    FILE* infile;
-    infile = fopen(argv[1], "r");
+    FILE* test_file;
+    test_file = fopen(argv[1], "r");
     while (1) {
         /* int childPid;  Used later when executing command */
         char prompt[100]; /* the prompt */
         char cmdLine[1024+1]; /* the command line */
-        cmd* command; /* the command (struct) */
-        
+    
         /* printPrompt(prompt); get the prompt */
       
-        if (fgets(cmdLine, 1024, infile) == NULL) {
+        if (fgets(cmdLine, 1024, test_file) == NULL) {
             break;
         }
 
@@ -122,19 +132,61 @@ int main (int argc, char *argv[])
         if (strlen(cmdLine) == 0)
             continue;
 
-        command = parseCommand(cmdLine); /* parse the command line */
+        parseCommand(cmdLine); /* parse the command line, get the command array */
 
-        if (isBuiltInCommand(command)) {
-            executeBuiltInCommand(command);
+        int fdout, size;
+        /*char buffer[80];
+        fd = open(infile, O_RDONLY);
+        size = read(fd, buffer, sizeof(buffer));
+        close(fd);
+
+        printf("%s\n", buffer);*/
+
+        /* printf("command1 name = %s\n", command_arr[0]->cmd_name);
+        printf("command1 arguments: %s, %s\n", command_arr[0]->args[0], command_arr[0]->args[1]);
+
+        printf("command2 name = %s\n", command_arr[1]->cmd_name);
+
+        printf("infile name = %s\n", infile);
+        printf("outfile name = %s\n", outfile);
+        printf("backgnd = %d\n", backgnd);
+        printf("append = %d\n", append); */
+
+        // Execute the commands in cmdLine
+        if (isBuiltInCommand(command_arr[0])) {
+            executeBuiltInCommand(command_arr[0]);
         } else {
             //printf("test");
             int childPid = 0;
             childPid = fork();
             if (childPid == 0){
                 //printf("test");
-                executeCommand(command);
+                //close(1);
+                //printf("output is %s:",outfile);
+                //printf("parameter is %s:", command_arr[0]->args[2]);
+                if (infile[0] != '\0'){
+                    int fdin = open(infile, O_RDONLY);
+                    dup2(fdin,STDIN_FILENO);
+                    close(fdin);
+                }
+
+                if (outfile[0] != '\0'){
+                    fdout = open(outfile, O_RDWR|O_CREAT|O_TRUNC,0777);
+                    //printf("output is %s:",outfile);
+                   // printf("parameter is %s:", command_arr[0]->args[2]);
+                    if (dup2(fdout, STDOUT_FILENO)==-1){
+                        perror("dup2");
+                        exit(0);
+                    }
+                    close(fdout);
+                    executeCommand(command_arr[0]);
+                    //perror("execvp");
+                }else{
+                    executeCommand(command_arr[0]);
+                }
+
             } else {
-                if (isBackgroundJob(command)){
+                if (isBackgroundJob(command_arr[0])){
                     //record in list of background jobs
                     printf("success");
                 } else {
@@ -143,8 +195,12 @@ int main (int argc, char *argv[])
                 }
             }
         } 
+
         /* Free the memory of command */
-        free(command);
+        for (int i = 0; i < PIPELINE; i++) {
+            free(command_arr[i]);
+        }
     }
-    fclose(infile);
+
+    fclose(test_file);
 }
