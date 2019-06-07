@@ -33,6 +33,6 @@ extern char infile[1024+1]; // the redirection in file name
 extern char outfile[1024+1]; // the redirection out file name
 extern int append; // if redirection out is >>
 extern int backgnd; // if background command, 1 for background, 0 for non-background
-
+extern int cmd_count; // the number of commands in cmdLine
 
 #endif

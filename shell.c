@@ -16,6 +16,7 @@ char infile[1024+1]; /* the redirection in file name*/
 char outfile[1024+1]; /* the redirection out file name */
 int append = 0; // if redirection out is >>
 int backgnd = 0; /* if background command, 1 for background, 0 for non-background */
+int cmd_count = 0; // the number of commands in cmdLine
 
 /* Get the prompt, but do not print */
 void printPrompt(char* prompt)
@@ -132,65 +133,91 @@ int main (int argc, char *argv[])
         if (strlen(cmdLine) == 0)
             continue;
 
+
         parseCommand(cmdLine); /* parse the command line, get the command array */
-
-        int fdout, size;
-        /*char buffer[80];
-        fd = open(infile, O_RDONLY);
-        size = read(fd, buffer, sizeof(buffer));
-        close(fd);
-
-        printf("%s\n", buffer);*/
-
-        /* printf("command1 name = %s\n", command_arr[0]->cmd_name);
-        printf("command1 arguments: %s, %s\n", command_arr[0]->args[0], command_arr[0]->args[1]);
-
-        printf("command2 name = %s\n", command_arr[1]->cmd_name);
-
-        printf("infile name = %s\n", infile);
-        printf("outfile name = %s\n", outfile);
-        printf("backgnd = %d\n", backgnd);
-        printf("append = %d\n", append); */
-
+        
         // Execute the commands in cmdLine
         if (isBuiltInCommand(command_arr[0])) {
             executeBuiltInCommand(command_arr[0]);
         } else {
-            //printf("test");
             int childPid = 0;
             childPid = fork();
-            if (childPid == 0){
-                //printf("test");
-                //close(1);
-                //printf("output is %s:",outfile);
-                //printf("parameter is %s:", command_arr[0]->args[2]);
-                if (infile[0] != '\0'){
-                    int fdin = open(infile, O_RDONLY);
-                    dup2(fdin,STDIN_FILENO);
-                    close(fdin);
+            if (childPid == 0) { // child process, call process A
+                // Single command, no pipe
+                if (cmd_count == 1) {
+                    // Execute the command (including redirection)
+                    if (infile[0] != '\0'){
+                        int fdin = open(infile, O_RDONLY);
+                        dup2(fdin,STDIN_FILENO);
+                        close(fdin);
+                    }
+
+                    if (outfile[0] != '\0') {
+                        int fdout;
+                        if (append = 1)
+                            fdout = open(outfile, O_RDWR|O_CREAT|O_APPEND,0777);
+                        else
+                            fdout = open(outfile, O_RDWR|O_CREAT|O_TRUNC,0777);
+                        dup2(fdout, STDOUT_FILENO)==-1;
+                        close(fdout);
+                        executeCommand(command_arr[0]);
+                    }else{
+                        executeCommand(command_arr[0]);
+                    }
                 }
 
-                if (outfile[0] != '\0'){
-                    if (append = 1)
-                        fdout = open(outfile, O_RDWR|O_CREAT|O_APPEND,0777);
-                    else
-                        fdout = open(outfile, O_RDWR|O_CREAT|O_TRUNC,0777);
-                    //printf("output is %s:",outfile);
-                   // printf("parameter is %s:", command_arr[0]->args[2]);
-                    dup2(fdout, STDOUT_FILENO)==-1;
-                    close(fdout);
-                    executeCommand(command_arr[0]);
-                }else{
-                    executeCommand(command_arr[0]);
+                // handle pipe (only 2 commands)
+                else if (cmd_count == 2) { 
+                    
+                    // cmd1 | cmd2
+
+                    // Create a pipe
+                    int pfd[2];
+                    if (pipe(pfd) == -1) {
+                        perror("pipe");
+                        exit(EXIT_FAILURE);
+                    }
+
+                    // Create process B1, execute cmd1
+                    int B1Pid = 0;
+                    B1Pid = fork();
+                    if (B1Pid == 0) {
+                        close(pfd[0]); // close the read end of the pipe
+                        dup2(pfd[1], STDOUT_FILENO); // Redirect stdout as the write end
+                        close(pfd[1]);
+
+                        // Execute cmd1, write the output to the pipe
+                        executeCommand(command_arr[0]);
+                    }
+
+                    // Create process B2, execute cmd2
+                    int B2Pid = 0;
+                    B2Pid = fork();
+                    if (B2Pid == 0) {
+                        close(pfd[1]); // close the write end of the pipe
+                        dup2(pfd[0], STDIN_FILENO); // Redirect stdout as the write end
+                        close(pfd[0]);
+
+                        // Execute cmd2, take input from the pipe
+                        executeCommand(command_arr[1]);
+                    }
+
+                    // In process A
+                    close(pfd[0]); // close the read end
+                    close(pfd[1]); // close the write end
+
+                    // wait for the two child process B1 and B2
+                    wait(NULL);
+                    wait(NULL);
                 }
 
             } else {
                 if (isBackgroundJob(command_arr[0])){
-                    //record in list of background jobs
-                    printf("success");
+                    // record in list of background jobs
+                    signal(SIGCHLD, SIG_IGN);
                 } else {
-                int stat = 0;
-                waitpid (childPid,&stat,0);
+                    int stat = 0;
+                    waitpid (childPid,&stat,0);
                 }
             }
         } 

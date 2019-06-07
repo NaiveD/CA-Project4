@@ -6,7 +6,6 @@
 void parseCommand(char* cmdLine)
 {
     char *p, *q; // A pointer used when parsing
-    int cmd_count = 0; // the number of commands in cmdLine
     char* cmdstr_arr[PIPELINE]; //store the command in pipe;
 
     /* Initializations */
@@ -15,6 +14,7 @@ void parseCommand(char* cmdLine)
     memset(outfile, 0, 1024+1);
     append = 0;
     backgnd = 0;
+    cmd_count = 0;
     // Initialization of command_arr
     for (int i = 0; i < PIPELINE; i++) {
         // malloc for each cmd struct
@@ -86,94 +86,4 @@ void parseCommand(char* cmdLine)
             }
         }
     }
-
-    // printf("In parse function: infile = %s\n", infile);
-    // printf("In parse function: outfile = %s\n", outfile);
-    //q = strtok(p, " "); /* get the first token of p, i.e. the command name */
-    //command_arr[cmd_count]->cmd_name = q; /* set the command name */
-    //command_arr[cmd_count]->args[0] = q;
-    
-    /* continue parsing. get the arguments */
-    //q = strtok(NULL, " "); /* the first argument */
-    //while (q != NULL) {
-     //   command_arr[cmd_count]->num_args++;
-     //   command_arr[cmd_count]->args[command_arr[cmd_count]->num_args] = q;
-        
-     //   q = strtok(NULL, " ");
-   // }
-
-   // cmd_count++;
-
-    /* Get later commands */
-    //p = strtok(NULL, " "); /* the first argument */
-    //while (p != NULL) {
-        /* Parse each command */    
-        //q = strtok(p, " "); /* get the first token of p, i.e. the command name */
-        //command_arr[cmd_count]->cmd_name = q; /* set the command name */
-        //command_arr[cmd_count]->args[command_arr[cmd_count]->num_args] = q;
-        
-        /* continue parsing. get the arguments */
-       // q = strtok(NULL, " "); /* the first argument */
-       // while (q != NULL) {
-            //command_arr[cmd_count]->num_args++;
-            //command_arr[cmd_count]->args[command_arr[cmd_count]->num_args] = q;
-            
-            //q = strtok(NULL, " ");
-        //}
-
-        //cmd_count++;    
-        
-        //p = strtok(NULL, " ");
-    //}
 }
-
-/* void get_command(int i); Get the ith command
-int check(const char* str);
-void getname(char* name); Get the file name of redirection */
-
-/* Return an array of commands in cmdLine 
-cmd** parseCommand(char* cmdLine) {
-    cmd* command[PIPELINE]; the array of commands in cmdLine to be returned
-
-    for (int i = 0; i < PIPELINE; i++) {
-        comman[i] = (cmd*) malloc(sizeof(cmd)); Remember to free !!! 
-    }
-
-    Initialization of the command array to be returned
-    memset()
-
-
-
-    Get the command name (cat/mkdir/echo)
-    get_command(0);
-    // check if there are redirection in, and get the input file name
-    if(check("<"))
-    // get the input file name
-        getname(infile);
-    
-    // check if there are pipes
-    int i；
-    for (int i = 1; i < PIPELINE; i++)
-    {
-        if(check("|")){
-            //get ith command
-            get_command(i);
-            //i++;
-        }else{
-            break;
-        }
-    }
-    // Check if there are redirection out
-    if(check(">"){
-        if (check(">"))
-            append = 1;
-        // Get the output file name
-        getname(outfile);
-    }
-    // Check if there are background command (&)
-    if (check("&"))
-        backgnd = 1;
-
-    // omit check of '\n'
-} */
-
