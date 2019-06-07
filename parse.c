@@ -24,7 +24,7 @@ void parseCommand(char* cmdLine)
         // Set number of arguments
         command_arr[i]->num_args = 0;
         command_arr[i]->infd = 0; // stdin
-        command_arr[i]->outfd = 1; // stdout
+        command_arr[i]->outfd = 1; //stout
     }
 
     /* Get each command */
