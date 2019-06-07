@@ -12,13 +12,11 @@
 
 // Global variables
 cmd* command_arr[PIPELINE]; // the command array
-NODE* head;
 char infile[1024+1]; /* the redirection in file name*/
 char outfile[1024+1]; /* the redirection out file name */
 int append = 0; // if redirection out is >>
 int backgnd = 0; /* if background command, 1 for background, 0 for non-background */
 int cmd_count = 0; // the number of commands in cmdLine
-int lastpid;
 
 /* Get the prompt, but do not print */
 void printPrompt(char* prompt)
@@ -87,12 +85,6 @@ void executeBuiltInCommand(cmd* command)
         }
     }
     else if (strcmp(command->cmd_name, "jobs")==0) {
-        NODE* printnode = head->next;
-        while (printnode != NULL)
-        {
-            printf("%d %s\n", printnode->npid, printnode->cmdname);
-            printnode = printnode->next;
-        }
         
     }
     else if (strcmp(command->cmd_name, "exit")==0) {
@@ -105,6 +97,12 @@ void executeBuiltInCommand(cmd* command)
 
 /* calls execvp */
 void executeCommand(cmd* command){
+    //int i;
+    //for (int i = 0; i < cmd_count; i++)
+    //{
+        /* code */
+    //}
+    
     execvp(command->cmd_name,command->args);
 }
 
@@ -114,13 +112,9 @@ int isBackgroundJob(cmd* command){
 
 int main (int argc, char *argv[])
 {
-    //For jobs
-    head = (NODE*)malloc(sizeof(NODE));
-    head->next = NULL;
     assert(argc == 2);
     FILE* test_file;
     test_file = fopen(argv[1], "r");
-    int loop = 0;
     while (1) {
         /* int childPid;  Used later when executing command */
         char prompt[100]; /* the prompt */
@@ -139,16 +133,16 @@ int main (int argc, char *argv[])
         if (strlen(cmdLine) == 0)
             continue;
 
-        parseCommand(cmdLine); /* parse the command line, get the command array */
 
+        parseCommand(cmdLine); /* parse the command line, get the command array */
+        
         // Execute the commands in cmdLine
         if (isBuiltInCommand(command_arr[0])) {
             executeBuiltInCommand(command_arr[0]);
         } else {
             int childPid = 0;
-            // childPid = fork();
+            childPid = fork();
             if (childPid == 0) { // child process, call process A
-                // printf("The first child process\n");
                 // Single command, no pipe
                 if (cmd_count == 1) {
                     // Execute the command (including redirection)
@@ -173,8 +167,10 @@ int main (int argc, char *argv[])
                 }
 
                 // handle pipe (only 2 commands)
-                else if (cmd_count == 2) {
+                else if (cmd_count == 2) { 
+                    
                     // cmd1 | cmd2
+
                     // Create a pipe
                     int pfd[2];
                     if (pipe(pfd) == -1) {
@@ -195,104 +191,36 @@ int main (int argc, char *argv[])
                     }
 
                     // Create process B2, execute cmd2
-                    // int B2Pid = 0;
-                    // B2Pid = fork();
-                    // if (B2Pid == 0)
-                    else {
+                    int B2Pid = 0;
+                    B2Pid = fork();
+                    if (B2Pid == 0) {
                         close(pfd[1]); // close the write end of the pipe
                         dup2(pfd[0], STDIN_FILENO); // Redirect stdout as the write end
                         close(pfd[0]);
 
                         // Execute cmd2, take input from the pipe
                         executeCommand(command_arr[1]);
-
-                        // In process A
-                        close(pfd[0]); // close the read end
-                        close(pfd[1]); // close the write end
-
-                        // wait for the two child process B1 and B2
-                        int stat = 0;
-                        waitpid (B1Pid, &stat, 0);
-                        // waitpid (B2Pid, &stat, 0);
                     }
-                }
-                
-                // handle multiple pipes
-                else if (cmd_count > 2) { // at least 3 command
-                    // cmd1 | cmd2 | cmd3
-                    // cmd1 | cmd2 | cmd3 | cmd4 | cmd5
-                    
-                    int fd; // file descriptor
-                    int fds[2]; // pipe(fds)
-                    for (int i = 0; i < cmd_count; i++) {
-                        //printf("222\n");
-                        //sleep(1);
-                        // if not the last command, we need to create a pipe for it
-                        if (i < cmd_count - 1)
-                        {
-                            pipe(fds); // create a pipe
-                            command_arr[i]->outfd = fds[1]; // set cmd[i]'s out file descriptor
-                            command_arr[i+1]->infd = fds[0]; // in file descriptor
-                        }
 
-                        // execute the ith command
-                        // Create process B1, execute cmd1
-                        int B1Pid;
-                        B1Pid = fork();
-                        if (B1Pid == 0) { // if in this child process B1
-                            // set read end
-                            if (command_arr[i]->infd != 0)
-                            {
-                                close(0);
-                                dup2(command_arr[i]->infd, STDIN_FILENO); // Redirect stdin as the read end
-                            }
-                            if (command_arr[i]->outfd != 1)
-                            {
-                                close(1);
-                                dup2(command_arr[i]->outfd, STDOUT_FILENO); // Redirect stdout as the write end
-                            }
-                            //printf("ssss\n");
-                            // close every other file descriptors
-                            for (int j = 3; j < 1024; j++)
-                                close(j);
+                    // In process A
+                    close(pfd[0]); // close the read end
+                    close(pfd[1]); // close the write end
 
-                            // Execute cmd i, write the output to the pipe
-                            executeCommand(command_arr[i]);
-                            sleep(5);
-                        }
-                        else if (B1Pid > 0)
-                        { // Parent process
-                            lastpid = B1Pid;
-                            signal(SIGCHLD, SIG_DFL);
-                        }
-
-                        if ((fd = command_arr[i]->infd) != 0) // if not stdin
-                            close(fd);
-
-                        if ((fd = command_arr[i]->outfd) != 1) // if not stdout
-                            close(fd);
-                    }             
-                    while (wait(NULL) != lastpid);
-                }
-            } 
-                if (isBackgroundJob(command_arr[0])){
-                    // record in list of background jobs
-                    NODE* p = malloc(sizeof(NODE));
-                    p->npid = childPid;
-                    strcpy(p->cmdname, command_arr[0]->cmd_name);
-
-                    NODE* tmp = head->next;
-                    head->next = p;
-                    p->next = tmp;
-
-                    signal(SIGCHLD, SIG_IGN);
-                } else {
-                    // printf("222\n");
-                    int stat = 0;
+                    // wait for the two child process B1 and B2
+                    wait(NULL);
                     wait(NULL);
                 }
-            
-        }
+
+            } else {
+                if (isBackgroundJob(command_arr[0])){
+                    // record in list of background jobs
+                    signal(SIGCHLD, SIG_IGN);
+                } else {
+                    int stat = 0;
+                    waitpid (childPid,&stat,0);
+                }
+            }
+        } 
 
         /* Free the memory of command */
         for (int i = 0; i < PIPELINE; i++) {

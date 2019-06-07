@@ -20,13 +20,6 @@ typedef struct cmd
     int outfd; //Redirection out file descriptor
 } cmd;
 
-typedef struct node{
-    pid_t npid;
-    char* cmdname[100];
-    struct node* next;
-}NODE;
-
-
 /* the parser function
  * input a line of command, and
  * output a pointer to the struct "cmd" which contains the command name and arguments
@@ -41,6 +34,5 @@ extern char outfile[1024+1]; // the redirection out file name
 extern int append; // if redirection out is >>
 extern int backgnd; // if background command, 1 for background, 0 for non-background
 extern int cmd_count; // the number of commands in cmdLine
-extern NODE* head;
 
 #endif
