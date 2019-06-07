@@ -171,16 +171,15 @@ int main (int argc, char *argv[])
                 }
 
                 if (outfile[0] != '\0'){
-                    fdout = open(outfile, O_RDWR|O_CREAT|O_TRUNC,0777);
+                    if (append = 1)
+                        fdout = open(outfile, O_RDWR|O_CREAT|O_APPEND,0777);
+                    else
+                        fdout = open(outfile, O_RDWR|O_CREAT|O_TRUNC,0777);
                     //printf("output is %s:",outfile);
                    // printf("parameter is %s:", command_arr[0]->args[2]);
-                    if (dup2(fdout, STDOUT_FILENO)==-1){
-                        perror("dup2");
-                        exit(0);
-                    }
+                    dup2(fdout, STDOUT_FILENO)==-1;
                     close(fdout);
                     executeCommand(command_arr[0]);
-                    //perror("execvp");
                 }else{
                     executeCommand(command_arr[0]);
                 }
