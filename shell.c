@@ -167,8 +167,7 @@ int main (int argc, char *argv[])
                 }
 
                 // handle pipe (only 2 commands)
-                else if (cmd_count == 2) { 
-                    
+                else if (cmd_count == 2) {
                     // cmd1 | cmd2
 
                     // Create a pipe
@@ -209,6 +208,58 @@ int main (int argc, char *argv[])
                     // wait for the two child process B1 and B2
                     wait(NULL);
                     wait(NULL);
+                }
+                
+                // handle multiple pipes
+                else if (cmd_count > 2) { // at least 3 commands
+                    // cmd1 | cmd2 | cmd3in
+                    // cmd1 | cmd2 | cmd3 | cmd4 | cmd5
+                    int fd; // file descriptor
+                    int fds[2]; // pipe(fds)
+                    for (int i = 0; i < cmd_count; i++) {
+                        // if not the last command, we need to create a pipe for it
+                        if (i < cmd_count - 1)
+                        {
+                            pipe(fds); // create a pipe
+                            command_arr[i]->outfd = fds[1]; // set cmd[i]'s out file descriptor
+                            command_arr[i+1]->infd = fds[0]; // in file descriptor
+                        }
+
+                        // execute the ith command
+                        // Create process B1, execute cmd1
+                        int B1Pid = 0;
+                        B1Pid = fork();
+                        if (B1Pid == 0) { // if in this child process B1
+                            // set read end
+                            if (command_arr[i]->infd != 0)
+                            {
+                                close(0);
+                                dup2(command_arr[i]->infd, STDIN_FILENO); // Redirect stdin as the read end
+                            }
+                            if (command_arr[i]->outfd != 1)
+                            {
+                                close(1);
+                                dup2(command_arr[i]->outfd, STDOUT_FILENO); // Redirect stdout as the write end
+                            }
+                            
+                            // close every other file descriptors
+                            for (int j = 3; j < 1024; j++)
+                                close(j);
+
+                            // Execute cmd i, write the output to the pipe
+                            executeCommand(command_arr[i]);
+                        }
+
+                        // wait for the child process B1
+                        wait(NULL);
+
+                        if ((fd = command_arr[i]->infd) != 0) // if not stdin
+                            close(fd);
+
+                        if ((fd = command_arr[i]->outfd) != 1) // if not stdout
+                            close(fd);
+
+                    }                
                 }
 
             } else {

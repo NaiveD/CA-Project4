@@ -23,6 +23,8 @@ void parseCommand(char* cmdLine)
         memset(command_arr[i]->args, 0, MAX_ARGS);
         // Set number of arguments
         command_arr[i]->num_args = 0;
+        command_arr[i]->infd = 0; // stdin
+        command_arr[i]->outfd = 1; // stdout
     }
 
     /* Get each command */
